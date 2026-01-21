@@ -3,21 +3,30 @@ name: Deploy to DreamHost
 on:
   push:
     branches:
-      - main  # Change this if your default branch is 'master'
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Deploy via SSH/Rsync
-        uses: Burnett01/rsync-deployments@7.0.0
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
         with:
-          switches: -avzr --delete
-          path: .
-          remote_path: ${{ secrets.TARGET_DIR }}
-          remote_host: ${{ secrets.REMOTE_HOST }}
-          remote_user: ${{ secrets.REMOTE_USER }}
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: unnecessary # We will scan for it in the next step
+          if_key_exists: replace
+
+      - name: Add Known Hosts
+        # This prevents the "Host key verification failed" error
+        run: ssh-keyscan -H ${{ secrets.SFTP_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy with rsync
+        run: |
+          rsync -avz --delete \
+            -e "ssh -p ${{ secrets.SFTP_PORT }}" \
+            ./ \
+            ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/home/mnkys/viney.id.au/
+        # IMPORTANT: Change 'YOUR_WEBSITE_FOLDER' to the actual folder name inside /home/mnkys/
