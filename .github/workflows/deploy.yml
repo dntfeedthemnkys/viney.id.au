@@ -24,6 +24,7 @@ jobs:
           rsync -avz --delete \
             --exclude '.git/' \
             --exclude '.github/' \
+            --exclude '.DS_Store' \
             -e "ssh -p ${{ secrets.SFTP_PORT }}" \
             ./ \
             ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/home/mnkys/viney.id.au/
